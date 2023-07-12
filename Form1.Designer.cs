@@ -35,6 +35,7 @@
             arquivoToolStripMenuItem = new ToolStripMenuItem();
             abrirToolStripMenuItem = new ToolStripMenuItem();
             salvarToolStripMenuItem = new ToolStripMenuItem();
+            novoArquivoToolStripMenuItem = new ToolStripMenuItem();
             visuaToolStripMenuItem = new ToolStripMenuItem();
             zoomInToolStripMenuItem = new ToolStripMenuItem();
             zoomOutToolStripMenuItem = new ToolStripMenuItem();
@@ -57,7 +58,9 @@
             treeView1.Name = "treeView1";
             treeView1.Size = new Size(193, 411);
             treeView1.TabIndex = 0;
-            treeView1.NodeMouseClick += treeView1_NodeMouseClick;
+            treeView1.AfterLabelEdit += treeView1_AfterLabelEdit;
+            treeView1.NodeMouseDoubleClick += OnTreeNodeClick;
+            treeView1.KeyDown += treeView1_KeyDown;
             // 
             // menuStrip1
             // 
@@ -70,7 +73,7 @@
             // 
             // arquivoToolStripMenuItem
             // 
-            arquivoToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { abrirToolStripMenuItem, salvarToolStripMenuItem });
+            arquivoToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { abrirToolStripMenuItem, salvarToolStripMenuItem, novoArquivoToolStripMenuItem });
             arquivoToolStripMenuItem.Name = "arquivoToolStripMenuItem";
             arquivoToolStripMenuItem.Size = new Size(61, 20);
             arquivoToolStripMenuItem.Text = "Arquivo";
@@ -79,17 +82,25 @@
             // 
             abrirToolStripMenuItem.Name = "abrirToolStripMenuItem";
             abrirToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.O;
-            abrirToolStripMenuItem.Size = new Size(145, 22);
+            abrirToolStripMenuItem.Size = new Size(194, 22);
             abrirToolStripMenuItem.Text = "Abrir";
-            abrirToolStripMenuItem.Click += abrirToolStripMenuItem_Click;
+            abrirToolStripMenuItem.Click += OpenFolderButton;
             // 
             // salvarToolStripMenuItem
             // 
             salvarToolStripMenuItem.Name = "salvarToolStripMenuItem";
             salvarToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            salvarToolStripMenuItem.Size = new Size(145, 22);
+            salvarToolStripMenuItem.Size = new Size(194, 22);
             salvarToolStripMenuItem.Text = "Salvar";
-            salvarToolStripMenuItem.Click += salvarToolStripMenuItem_Click;
+            salvarToolStripMenuItem.Click += SaveFileButton;
+            // 
+            // novoArquivoToolStripMenuItem
+            // 
+            novoArquivoToolStripMenuItem.Name = "novoArquivoToolStripMenuItem";
+            novoArquivoToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.N;
+            novoArquivoToolStripMenuItem.Size = new Size(194, 22);
+            novoArquivoToolStripMenuItem.Text = "Novo Arquivo ";
+            novoArquivoToolStripMenuItem.Click += NewFileButton;
             // 
             // visuaToolStripMenuItem
             // 
@@ -153,7 +164,7 @@
             tabControl1.SelectedIndex = 0;
             tabControl1.Size = new Size(579, 411);
             tabControl1.TabIndex = 2;
-            tabControl1.Selecting += tabControl1_Selecting;
+            tabControl1.Selecting += OnTabChange;
             // 
             // Form1
             // 
@@ -196,5 +207,6 @@
         private ToolStripMenuItem zoomInToolStripMenuItem;
         private ToolStripMenuItem zoomOutToolStripMenuItem;
         private TabControl tabControl1;
+        private ToolStripMenuItem novoArquivoToolStripMenuItem;
     }
 }

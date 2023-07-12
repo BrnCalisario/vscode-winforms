@@ -26,7 +26,6 @@ namespace Aula02
 
         private void Form1_Shown(object sender, EventArgs e)
         {
-            //this.openNewFolder();
             tabControl1.TabPages.Clear();
         }
 
@@ -34,31 +33,37 @@ namespace Aula02
         {
             if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
             {
-                this.CurrentDirectoryPath = folderBrowserDialog1.SelectedPath;
-
-                this.clearTreeView();
                 this.CurrentFileRTB = null;
 
-                var files = Directory.GetFiles(CurrentDirectoryPath);
+                this.CurrentDirectoryPath = folderBrowserDialog1.SelectedPath;
 
-                SelectedDirectory.Text = "Diretório: " + Path.GetFileName(CurrentDirectoryPath);
-
-                foreach (var file in files)
-                {
-                    string name = Path.GetFileName(file);
-                    treeView1.BeginUpdate();
-                    treeView1.Nodes.Add(name);
-                    treeView1.EndUpdate();
-                }
+                this.RefreshTree();
             }
         }
 
-        private void abrirToolStripMenuItem_Click(object sender, EventArgs e)
+        private void RefreshTree()
+        {
+            this.ClearTreeView();
+
+            SelectedDirectory.Text = "Diretório: " + Path.GetFileName(CurrentDirectoryPath);
+
+            var files = Directory.GetFiles(CurrentDirectoryPath);
+            foreach (var file in files)
+            {
+                string name = Path.GetFileName(file);
+                treeView1.BeginUpdate();
+                treeView1.Nodes.Add(name);
+                treeView1.EndUpdate();
+            }
+
+        }
+
+        private void OpenFolderButton(object sender, EventArgs e)
         {
             openNewFolder();
         }
 
-        private void clearTreeView()
+        private void ClearTreeView()
         {
             treeView1.BeginUpdate();
             treeView1.Nodes.Clear();
@@ -67,8 +72,9 @@ namespace Aula02
             SelectedDirectory.Text = "Nenhum diretório selecionado";
         }
 
-        private void treeView1_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
+        private void OnTreeNodeClick(object sender, TreeNodeMouseClickEventArgs e)
         {
+
             foreach (TabPage tb in tabControl1.TabPages)
             {
                 if (tb.Text == e.Node.Text)
@@ -80,35 +86,11 @@ namespace Aula02
 
             this.CurrentFileName = e.Node.Text;
 
-            var tabPage = new TabPage();
-            tabPage.Text = this.CurrentFileName;
+            this.CreateTab(this.CurrentFileName);
 
-            RichTextBox rtb = new RichTextBox();
-            rtb.Dock = DockStyle.Fill;
-            rtb.Text = File.ReadAllText(this.FilePath);
-
-            StatusStrip stp = new StatusStrip();
-
-            var closeBtn = new ToolStripStatusLabel();
-            closeBtn.Text = "Fechar Arquivo";
-
-            closeBtn.Click += (o, e) =>
-            {
-                tabControl1.TabPages.Remove(tabPage);
-            };
-
-            stp.Items.Add(closeBtn);
-
-            tabPage.Controls.Add(stp);
-            tabPage.Controls.Add(rtb);
-
-            tabControl1.TabPages.Add(tabPage);
-            tabControl1.SelectedTab = tabPage;
-
-            this.CurrentFileRTB = rtb;
         }
 
-        private void salvarToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SaveFileButton(object sender, EventArgs e)
         {
             if (CurrentDirectoryPath == string.Empty)
             {
@@ -132,11 +114,12 @@ namespace Aula02
                 return;
 
             File.WriteAllText(this.FilePath, this.CurrentFileRTB.Text);
-            MessageBox.Show("Salvou");
+            MessageBox.Show("Salvou " + this.CurrentFileName);
         }
 
-        private void tabControl1_Selecting(object sender, TabControlCancelEventArgs e)
+        private void OnTabChange(object sender, TabControlCancelEventArgs e)
         {
+
             var selectedTab = tabControl1.SelectedTab;
 
             if (selectedTab is null)
@@ -147,12 +130,150 @@ namespace Aula02
             {
                 if (c is not RichTextBox rtb)
                     continue;
-                else
+
+                this.CurrentFileRTB = rtb;
+                this.CurrentFileName = selectedTab.Text;
+                return;
+            }
+        }
+
+        private void NewFileButton(object sender, EventArgs e)
+        {
+            if (this.CurrentDirectoryPath == string.Empty)
+                return;
+
+            int count = Directory.GetFiles(this.CurrentDirectoryPath).Count(t => t.Contains("New File"));
+            string fileName = "New File" + (count + 1) + ".txt";
+
+            File.Create(this.CurrentDirectoryPath + "/" + fileName).Close();
+            this.RefreshTree();
+
+            this.CurrentFileName = fileName;
+            this.CreateTab(fileName);
+
+            MessageBox.Show(fileName);
+        }
+
+        private void CreateTab(string tabName)
+        {
+            TabPage tabPage = new()
+            {
+                Text = tabName
+            };
+
+            RichTextBox rtb = new()
+            {
+                Dock = DockStyle.Fill,
+                Text = File.ReadAllText(this.FilePath)
+            };
+
+            var closeBtn = new ToolStripStatusLabel
+            {
+                Text = "Fechar Arquivo"
+            };
+
+            closeBtn.Click += (o, e) =>
+            {
+                tabControl1.TabPages.Remove(tabPage);
+            };
+
+            StatusStrip stp = new();
+            stp.Items.Add(closeBtn);
+
+            tabPage.Controls.Add(stp);
+            tabPage.Controls.Add(rtb);
+
+            tabControl1.TabPages.Add(tabPage);
+            tabControl1.SelectedTab = tabPage;
+
+            this.CurrentFileRTB = rtb;
+            this.CurrentFileName = tabName;
+        }
+
+        private void treeView1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2)
+            {
+                treeView1.LabelEdit = true;
+                var selected = treeView1.SelectedNode;
+
+                if (!selected.IsEditing)
                 {
-                    this.CurrentFileRTB = rtb;
-                    return;
+                    selected.BeginEdit();
                 }
             }
+
+            if(e.KeyCode == Keys.Delete)
+            {
+                var selected = treeView1.SelectedNode;
+
+                if (selected is null)
+                    return;
+
+                var path = this.CurrentDirectoryPath + "/" +selected.Text;
+
+                var warning = MessageBox.Show(
+                    "Tem certeza que deseja apagar este arquivo",
+                    "Aviso", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning
+                    );
+                
+                if (warning != DialogResult.OK)
+                    return;         
+                
+                foreach(TabPage tb in tabControl1.TabPages)
+                {
+                    if(tb.Text == selected.Text)
+                    {
+                        tabControl1.TabPages.Remove(tb);
+                        break;
+                    }
+                }
+
+
+                File.Delete(path);
+                this.RefreshTree();
+            }
+        }
+
+        private void treeView1_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)
+        {
+            if (e.Label is null)
+            {
+                return;
+            }
+
+
+            var oldName = this.CurrentDirectoryPath + "/" + e.Node.Text;
+            var newName = this.CurrentDirectoryPath + "/" + e.Label;
+
+
+  
+            if (oldName.Equals(newName))
+                return;
+            try
+            {
+                File.Move(oldName, newName);
+            }
+            catch
+            {
+                return;
+            }
+
+            if (this.CurrentFileName == e.Node.Text)
+                this.CurrentFileName = e.Label;
+
+
+            foreach (TabPage tp in tabControl1.TabPages)
+            {
+                if (tp.Text == e.Node.Text)
+                {
+                    tp.Text = e.Label;
+                    break;
+                }
+            }
+
+            this.RefreshTree();
+            MessageBox.Show("Renomeado");
         }
     }
 }
