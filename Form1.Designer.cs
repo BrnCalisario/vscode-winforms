@@ -84,7 +84,7 @@
             abrirToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.O;
             abrirToolStripMenuItem.Size = new Size(194, 22);
             abrirToolStripMenuItem.Text = "Abrir";
-            abrirToolStripMenuItem.Click += OpenFolderButton;
+            abrirToolStripMenuItem.Click += OpenNewFolder;
             // 
             // salvarToolStripMenuItem
             // 

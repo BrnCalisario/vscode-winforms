@@ -29,7 +29,7 @@ namespace Aula02
             tabControl1.TabPages.Clear();
         }
 
-        private void openNewFolder()
+        private void OpenNewFolder(object sender, EventArgs e)
         {
             if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
             {
@@ -46,21 +46,22 @@ namespace Aula02
             this.ClearTreeView();
 
             SelectedDirectory.Text = "Diretório: " + Path.GetFileName(CurrentDirectoryPath);
-
-            var files = Directory.GetFiles(CurrentDirectoryPath);
-            foreach (var file in files)
-            {
-                string name = Path.GetFileName(file);
-                treeView1.BeginUpdate();
-                treeView1.Nodes.Add(name);
-                treeView1.EndUpdate();
-            }
-
+            
+            var dirInfo = new DirectoryInfo(CurrentDirectoryPath);
+            
+            treeView1.Nodes.Add(CreateDirectoryNode(dirInfo));
         }
 
-        private void OpenFolderButton(object sender, EventArgs e)
+        private TreeNode CreateDirectoryNode(DirectoryInfo directoryInfo)
         {
-            openNewFolder();
+            var dirNode = new TreeNode(directoryInfo.Name);
+           
+            foreach(var dir in directoryInfo.GetDirectories())
+                dirNode.Nodes.Add(CreateDirectoryNode(dir));
+            foreach (var file in directoryInfo.GetFiles())
+                dirNode.Nodes.Add(new TreeNode(file.Name));
+
+            return dirNode;
         }
 
         private void ClearTreeView()
@@ -74,6 +75,17 @@ namespace Aula02
 
         private void OnTreeNodeClick(object sender, TreeNodeMouseClickEventArgs e)
         {
+            var dirPath = Directory.GetParent(this.CurrentDirectoryPath).FullName + "\\" + e.Node.Text;
+
+            if(dirPath.Equals(this.CurrentDirectoryPath))
+                return;
+     
+            var itemAttr = File.GetAttributes(this.CurrentDirectoryPath + "/" + e.Node.Text);
+
+            if (itemAttr.HasFlag(FileAttributes.Directory))
+                return;
+               
+
 
             foreach (TabPage tb in tabControl1.TabPages)
             {
@@ -83,6 +95,7 @@ namespace Aula02
                     return;
                 }
             }
+
 
             this.CurrentFileName = e.Node.Text;
 
@@ -197,10 +210,9 @@ namespace Aula02
                 treeView1.LabelEdit = true;
                 var selected = treeView1.SelectedNode;
 
-                if (!selected.IsEditing)
-                {
+                if (!selected.IsEditing)               
                     selected.BeginEdit();
-                }
+                
             }
 
             if(e.KeyCode == Keys.Delete)
